@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+    <div class="screens">
+        <video id="camera" class="screen" autoplay hidden></video>
+        <div class="chooser">
+            <label for="sens" id="labelS"></label>
+            <input type="range" name="sensibility" id="sens" min="0" max="450" step="1" value="7">
+            <br>
+            <canvas id="lienzo" class="screen"></canvas>
+        </div>
+    </div>
+    <script src="./scripts/main.js"></script>
+</body>
+</html>

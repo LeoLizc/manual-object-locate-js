@@ -1,0 +1,21 @@
+.screens{
+    margin-top: 100px;
+}
+.screen{
+    transform: scaleX(-1);
+}
+
+.chooser {
+    display: inline-block;
+    height: auto;
+    width: auto;
+}
+
+label{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 10px;
+    text-align: center;
+    padding-right: 70px;
+}
