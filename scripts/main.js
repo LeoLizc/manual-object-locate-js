@@ -1,30 +1,34 @@
+import { distancia } from "./utils.js";
+import Item from "./item.js";
+
 let dimenciones = {
     height: 500,
-    width: 500
+    width: 500,
 };
 let minDif = 180;
 
-function sensibilityHandler(ev){
+function sensibilityHandler(ev) {
     // console.log(ev);
     minDif = ev.target.value;
     // document.getElementById('labelS').value = minDif;
-    document.getElementById('labelS').innerHTML = minDif;
+    document.getElementById("labelS").innerHTML = minDif;
 }
 
-window.onload = ()=>{
+window.onload = () => {
     loadVideo();
-    document.getElementById('sens').onchange = sensibilityHandler;
-}
+    document.getElementById("sens").onchange = sensibilityHandler;
+};
 
-function loadVideo(){
+function loadVideo() {
     var video = document.querySelector("#camera");
-    config = {
+    const config = {
         audio: false,
-        video: dimenciones
+        video: dimenciones,
     };
 
     if (navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia(config)
+        navigator.mediaDevices
+            .getUserMedia(config)
             .then(function (stream) {
                 video.srcObject = stream;
                 processImage(video);
@@ -36,32 +40,38 @@ function loadVideo(){
     }
 }
 
-function processImage(video){
-    canva = document.getElementById('lienzo');
+function processImage(video) {
+    const canva = document.getElementById("lienzo");
     canva.height = dimenciones.height;
     canva.width = dimenciones.width;
-    ctx = canva.getContext('2d')
+    const ctx = canva.getContext("2d");
     // let cont = 0;
     let color = [0, 255, 0];
 
-    setInterval(()=>{
+    setInterval(() => {
         ctx.drawImage(video, 0, 0);
         // cont++;
 
-        let data = ctx.getImageData(0, 0, dimenciones.height, dimenciones.width);
-        let frame = data.data; 
-        let mejor = {
+        let data = ctx.getImageData(
+            0,
+            0,
+            dimenciones.height,
+            dimenciones.width
+        );
+        let frame = data.data;
+        let prom = {
             coord: [0, 0],
-            cont: 0
+            cont: 0,
         };
-        for (let i = 0; i < frame.length; i+=4) {
+        const items = [];
+        for (let i = 0; i < frame.length; i += 4) {
             // if(!mejor){
             //     mejor = {
             //         coord: idx2XY(i/4),
-            //         dist: distance(color, [frame[i], frame[i+1], frame[i+2]])
+            //         dist: distancia(color, [frame[i], frame[i+1], frame[i+2]])
             //     };
             // }else{
-            //     let dist = distance(color, [frame[i], frame[i+1], frame[i+2]]);
+            //     let dist = distancia(color, [frame[i], frame[i+1], frame[i+2]]);
             //     if(dist < mejor.dist){
             //         mejor = {
             //             coord: idx2XY(i/4),
@@ -70,34 +80,57 @@ function processImage(video){
             //     }
             // }
             // console.log('hi');
-            if(distance(color,[frame[i], frame[i+1], frame[i+2]])<minDif){
-                [frame[i], frame[i+1], frame[i+2]] = [0, 0, 255];
-                let dim = idx2XY(i/4);
-                mejor.coord = mejor.coord.map((val, idx)=>{
-                    return val+dim[idx];
+            if (
+                distancia(color, [frame[i], frame[i + 1], frame[i + 2]]) <
+                minDif
+            ) {
+                // [frame[i], frame[i + 1], frame[i + 2]] = [0, 0, 255];
+                let dim = idx2XY(i / 4);
+                let nuevo = true;
+
+                for (let index = 0; index < items.length; index++) {
+                    if (items[index].estaCerca(...dim)) {
+                        items[index].addPixel(...dim);
+                        nuevo = false;
+                    }
+                }
+
+                if (nuevo) {
+                    items.push(new Item(...dim));
+                }
+
+                prom.coord = prom.coord.map((val, idx) => {
+                    return val + dim[idx];
                 });
-                mejor.cont++;
+                prom.cont++;
                 // frame[i] = 0;
                 // frame[i+1] = 0;
                 // frame[i+2] = 255;
                 // console.log('a');
             }
-
         }
-        ctx.putImageData(data, 0, 0);
+        // ctx.putImageData(data, 0, 0);
 
-        mejor.coord = mejor.coord.map((val, idx)=>{
-            return val/mejor.cont;
+        prom.coord = prom.coord.map((val, idx) => {
+            return val / prom.cont;
         });
-        // console.log(mejor);
+        // console.log(prom);
         ctx.beginPath();
-        ctx.fillStyle = ctx.strokeStyle = 'red';
-        ctx.ellipse(...mejor.coord, 5, 5, Math.PI / 4, 0, 2 * Math.PI);
+        ctx.fillStyle = ctx.strokeStyle = "red";
+        ctx.ellipse(...prom.coord, 5, 5, Math.PI / 4, 0, 2 * Math.PI);
         ctx.stroke();
         ctx.fill();
 
-    }, 50)
-    
+        console.log(items);
+        for (let index = 0; index < items.length; index++) {
+            const item = items[index];
+            ctx.beginPath();
+            ctx.rect(item.x, item.y, item.width, item.height);
+            ctx.strokeStyle = "purple";
+            ctx.stroke();
+        }
+    }, 50);
+
     // setInterval(()=>{
     //     console.clear();
     //     console.log('fps:', cont);
@@ -105,14 +138,8 @@ function processImage(video){
     // }, 1000);
 }
 
-function distance(point1, point2){
-    return Math.sqrt(point1.reduce((acum, curr, idx)=>{
-        return acum + Math.pow(curr-point2[idx], 2)
-    }, 0));
-}
-
-function idx2XY(idx){
-    let y = Math.floor(idx/dimenciones.width);
-    let x = idx%dimenciones.width;
+function idx2XY(idx) {
+    const y = Math.floor(idx / dimenciones.width);
+    const x = idx % dimenciones.width;
     return [x, y];
 }
