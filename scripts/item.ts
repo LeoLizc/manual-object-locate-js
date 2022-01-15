@@ -4,11 +4,11 @@ export default class Item<Object> {
     static minDistance: number = 20;
 
     private pixels: Array<{ x: number; y: number }>;
-    private x: number;
-    private y: number;
+    private x: number = 0;
+    private y: number = 0;
 
-    private width: number;
-    private height: number;
+    private width: number = 0;
+    private height: number = 0;
 
     constructor(x: number, y: number) {
         this.pixels = [];

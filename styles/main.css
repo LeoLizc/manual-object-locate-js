@@ -19,3 +19,9 @@ label{
     text-align: center;
     padding-right: 70px;
 }
+
+.colored{
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+}

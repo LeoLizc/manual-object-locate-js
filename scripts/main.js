@@ -1,9 +1,10 @@
 import { distancia } from "./utils.js";
 import Item from "./item.js";
 
+let color = [0, 255, 0];
 let dimenciones = {
-    height: 500,
-    width: 500,
+    height: 200,
+    width: 200,
 };
 let minDif = 180;
 
@@ -16,8 +17,26 @@ function sensibilityHandler(ev) {
 
 window.onload = () => {
     loadVideo();
+    document.getElementById('lienzo').onclick = onCanvasClick;
     document.getElementById("sens").onchange = sensibilityHandler;
 };
+
+function onCanvasClick(evn){
+    // console.log(evn);
+    const data = evn.target.getContext('2d').getImageData(
+        0,
+        0,
+        dimenciones.height,
+        dimenciones.width
+    ).data;
+    const X = Math.min(evn.offsetX, dimenciones.width-1);
+    const Y = Math.min(evn.offsetY, dimenciones.height-1);
+    const id = XY2Idx(X, Y);
+
+    // console.log(`rgb(${data[id]},${data[id+1]},${data[id+2]})`);
+    color = [data[id], data[id+1], data[id+2]];
+    document.getElementsByClassName('colored')[0].style['background-color'] = `rgb(${color[0]},${color[1]},${color[2]})`;
+}
 
 function loadVideo() {
     var video = document.querySelector("#camera");
@@ -46,7 +65,6 @@ function processImage(video) {
     canva.width = dimenciones.width;
     const ctx = canva.getContext("2d");
     // let cont = 0;
-    let color = [0, 255, 0];
 
     setInterval(() => {
         ctx.drawImage(video, 0, 0);
@@ -109,6 +127,9 @@ function processImage(video) {
                 // console.log('a');
             }
         }
+        // frame[0] = frame[39996] = 255;
+        // frame[1] = frame[39997] = 0;
+        // frame[2] = frame[39998] = 0;
         // ctx.putImageData(data, 0, 0);
 
         prom.coord = prom.coord.map((val, idx) => {
@@ -121,7 +142,7 @@ function processImage(video) {
         ctx.stroke();
         ctx.fill();
 
-        console.log(items);
+        // console.log(items);
         for (let index = 0; index < items.length; index++) {
             const item = items[index];
             ctx.beginPath();
@@ -142,4 +163,8 @@ function idx2XY(idx) {
     const y = Math.floor(idx / dimenciones.width);
     const x = idx % dimenciones.width;
     return [x, y];
+}
+
+function XY2Idx(x, y){
+    return (y*dimenciones.width + x)*4;
 }
