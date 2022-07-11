@@ -9,11 +9,13 @@ export default class Item<Object> {
 
     private width: number = 0;
     private height: number = 0;
-
-    constructor(x: number, y: number) {
+    
+    constructor();
+    constructor(x?: number, y?: number) {
         this.pixels = [];
-        this.addPixel(x, y);
+        if(x && y) this.addPixel(x, y);
     }
+
 
     public addPixel(x: number, y: number): void {
         if (this.pixels.length <= 0) {

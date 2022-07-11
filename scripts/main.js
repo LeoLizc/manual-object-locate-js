@@ -8,6 +8,10 @@ let dimenciones = {
 };
 let minDif = 180;
 
+let radius = 2;
+
+let toggle = false;
+
 function sensibilityHandler(ev) {
     // console.log(ev);
     minDif = ev.target.value;
@@ -15,10 +19,15 @@ function sensibilityHandler(ev) {
     document.getElementById("labelS").innerHTML = minDif;
 }
 
+function buttonHandler(evn){
+    toggle = !toggle;
+}
+
 window.onload = () => {
     loadVideo();
     document.getElementById('lienzo').onclick = onCanvasClick;
     document.getElementById("sens").onchange = sensibilityHandler;
+    document.getElementById('boton').onclick = buttonHandler;
 };
 
 function onCanvasClick(evn){
@@ -77,64 +86,9 @@ function processImage(video) {
             dimenciones.width
         );
         let frame = data.data;
-        let prom = {
-            coord: [0, 0],
-            cont: 0,
-        };
-        const items = [];
-        for (let i = 0; i < frame.length; i += 4) {
-            // if(!mejor){
-            //     mejor = {
-            //         coord: idx2XY(i/4),
-            //         dist: distancia(color, [frame[i], frame[i+1], frame[i+2]])
-            //     };
-            // }else{
-            //     let dist = distancia(color, [frame[i], frame[i+1], frame[i+2]]);
-            //     if(dist < mejor.dist){
-            //         mejor = {
-            //             coord: idx2XY(i/4),
-            //             dist: dist
-            //         };
-            //     }
-            // }
-            // console.log('hi');
-            if (
-                distancia(color, [frame[i], frame[i + 1], frame[i + 2]]) <
-                minDif
-            ) {
-                // [frame[i], frame[i + 1], frame[i + 2]] = [0, 0, 255];
-                let dim = idx2XY(i / 4);
-                let nuevo = true;
 
-                for (let index = 0; index < items.length; index++) {
-                    if (items[index].estaCerca(...dim)) {
-                        items[index].addPixel(...dim);
-                        nuevo = false;
-                    }
-                }
+        const [items, prom] = toggle? getItems(frame) : getItemsByExpand(frame);
 
-                if (nuevo) {
-                    items.push(new Item(...dim));
-                }
-
-                prom.coord = prom.coord.map((val, idx) => {
-                    return val + dim[idx];
-                });
-                prom.cont++;
-                // frame[i] = 0;
-                // frame[i+1] = 0;
-                // frame[i+2] = 255;
-                // console.log('a');
-            }
-        }
-        // frame[0] = frame[39996] = 255;
-        // frame[1] = frame[39997] = 0;
-        // frame[2] = frame[39998] = 0;
-        // ctx.putImageData(data, 0, 0);
-
-        prom.coord = prom.coord.map((val, idx) => {
-            return val / prom.cont;
-        });
         // console.log(prom);
         ctx.beginPath();
         ctx.fillStyle = ctx.strokeStyle = "red";
@@ -167,4 +121,134 @@ function idx2XY(idx) {
 
 function XY2Idx(x, y){
     return (y*dimenciones.width + x)*4;
+}
+
+function getItems(frame){
+    let prom = {
+        coord: [0, 0],
+        cont: 0,
+    };
+
+    const items = [];
+    for (let i = 0; i < frame.length; i += 4) {
+
+        if (
+            distancia(color, [frame[i], frame[i + 1], frame[i + 2]]) <
+            minDif
+        ) {
+            // [frame[i], frame[i + 1], frame[i + 2]] = [0, 0, 255];
+            let dim = idx2XY(i / 4);
+            let nuevo = true;
+
+            for (let index = 0; index < items.length; index++) {
+                if (items[index].estaCerca(...dim)) {
+                    items[index].addPixel(...dim);
+                    nuevo = false;
+                }
+            }
+
+            if (nuevo) {
+                items.push(new Item(...dim));
+            }
+
+            prom.coord = prom.coord.map((val, idx) => {
+                return val + dim[idx];
+            });
+            prom.cont++;
+        }
+    }
+
+    prom.coord = prom.coord.map((val, idx) => {
+        return val / prom.cont;
+    });
+
+    return [items, prom]
+}
+
+function getItemsByExpand(frame){
+    const check = Array(frame.length/4).fill(false);
+
+    let prom = {
+        coord: [0, 0],
+        cont: 0,
+    };
+
+    const items = [];
+    for (let i = 0; i < frame.length; i += 4) {
+
+        if (!check[i/4] && distancia(color, [frame[i], frame[i + 1], frame[i + 2]]) < minDif) {
+            // [frame[i], frame[i + 1], frame[i + 2]] = [0, 0, 255];
+            const dim = idx2XY(i / 4);
+
+            // let nuevo = true;
+
+            // for (let index = 0; index < items.length; index++) {
+            //     if (items[index].estaCerca(...dim)) {
+            //         items[index].addPixel(...dim);
+            //         nuevo = false;
+            //     }
+            // }
+
+            // if (nuevo) {
+            //     items.push(new Item(...dim));
+            // }
+
+            const item = new Item();
+
+            expand(item, frame, check, dim);
+            items.push(item);
+
+            // prom.coord = prom.coord.map((val, idx) => {
+            //     return val + dim[idx];
+            // });
+            // prom.cont++;
+        }
+    }
+
+    // prom.coord = prom.coord.map((val, idx) => {
+    //     return val / prom.cont;
+    // });
+
+    return [items, prom];
+}
+
+function expand(item, frame, check, pixel){
+    let idx = XY2Idx(...pixel);
+
+    if(check[idx/4]){
+        return;
+    }
+
+    check[idx/4] = true;
+    if(distancia(color, [frame[idx], frame[idx + 1], frame[idx + 2]]) > minDif){
+        return;
+    }
+
+    item.addPixel(...pixel);
+    
+    //Expand
+    for (let i = 1; i <= radius; i++) {
+        
+
+        if(pixel[1]-i >= 0)
+        for (let x = Math.max(0, pixel[0] - i); x <= Math.min(dimenciones.width-1, pixel[0]+i); x++) {
+             expand(item, frame, check, [x, pixel[1]-i]);
+        }
+
+        if(pixel[0]+i <= dimenciones.width-1)
+        for (let y = Math.max(0, pixel[1] - i + 1); y <= Math.min(dimenciones.height-1, pixel[1]+i); y++) {
+             expand(item, frame, check, [pixel[0] + i, y]);
+        }
+        
+        if(pixel[1]+i <= dimenciones.height-1)
+        for (let x = Math.max(0, pixel[0] - i); x <= Math.min(dimenciones.width-1, pixel[0]+i - 1); x++) {
+             expand(item, frame, check, [x, pixel[1] + i]);
+        }
+
+        if(pixel[0]-i >= 0)
+        for (let y = Math.max(0, pixel[1] - i+1); y <= Math.min(dimenciones.height-1, pixel[1]+i - 1); y++) {
+             expand(item, frame, check, [pixel[0] - i, y]);
+        }
+
+    }
 }
